@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Tab</title>
+  <!--
+    Default styles. Custom CSS saved in Settings is injected as
+    <style id="custom-theme-style"> at the END of <head>, so it overrides
+    anything defined here (at equal specificity).
+
+    Stable selectors for custom stylesheets:
+      #app-header                 Sticky top bar
+      #bookmark-count             "N bookmarks" label
+      #search-input               Search box
+      #view-toggle                Blocks / List switch (.view-toggle-btn[aria-pressed])
+      #add-bookmark-btn, #add-folder-btn, #settings-btn   Toolbar buttons
+      #bookmark-list              Main container; data-view="grid" or "list"
+                                  (body carries the same data-view attribute)
+      .bookmark-item              Bookmark card / row (data-bookmark-id, --hue)
+      .bookmark-avatar            Coloured letter tile
+      .bookmark-main              Wrapper around title, URL and folder
+      .bookmark-title             Link with the bookmark's title
+      .bookmark-url               Bookmark's URL text
+      .bookmark-folder            Folder path pill (grid view only)
+      .bookmark-note              Notes textarea inside each card
+      .bookmark-note-status       "Saved" indicator for each note
+      .bookmark-actions           Edit / delete buttons
+      .drag-handle                Grip used to drag items (list view)
+      .bookmark-folder-group      List view: collapsible folder (<details>, data-depth, --hue)
+      .bookmark-folder-header     List view: folder row (<summary>)
+      .bookmark-folder-title      List view: folder name
+      .bookmark-folder-count      List view: number of bookmarks in the folder
+      .bookmark-folder-children   List view: indented contents of a folder
+      .is-drop-target             Folder currently highlighted while dragging
+      .empty-state                Message shown when nothing is listed
+      #settings-panel             Collapsible settings container (<details>)
+      #css-editor                 Custom CSS textarea
+      #save-style-btn, #reset-style-btn, #settings-status
+      .modal                      Add / edit / confirm dialogs
+      .toast                      Pop-up notifications
+
+    Theme variables (override these on :root for quick re-theming):
+      --bg, --surface, --surface-2, --border, --text, --text-muted,
+      --accent, --accent-2, --danger, --radius, --radius-sm, --gap, --font,
+      --hue-s, --avatar-bg-l, --avatar-fg-l, --stripe-l, --folder-l
+  -->
+  <style>
+    :root {
+      --bg: #f5f6fb;
+      --bg-glow-1: rgba(99, 102, 241, 0.16);
+      --bg-glow-2: rgba(236, 72, 153, 0.11);
+      --surface: #ffffff;
+      --surface-2: #f1f2f9;
+      --border: #e3e5f0;
+      --text: #1d1f33;
+      --text-muted: #6a6f8a;
+      --accent: #6366f1;
+      --accent-2: #a855f7;
+      --accent-soft: rgba(99, 102, 241, 0.12);
+      --danger: #e11d48;
+      --danger-soft: rgba(225, 29, 72, 0.1);
+      --toast-bg: #1d1f33;
+      --toast-fg: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(22, 24, 50, 0.05), 0 1px 3px rgba(22, 24, 50, 0.06);
+      --shadow-md: 0 12px 28px -10px rgba(22, 24, 50, 0.22);
+      --shadow-lg: 0 28px 64px -16px rgba(22, 24, 50, 0.4);
+      --radius: 14px;
+      --radius-sm: 9px;
+      --gap: 16px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      --hue: 240;
+      --hue-s: 85%;
+      --avatar-bg-l: 92%;
+      --avatar-fg-l: 36%;
+      --stripe-l: 62%;
+      --folder-l: 52%;
+      color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0e1018;
+        --bg-glow-1: rgba(99, 102, 241, 0.22);
+        --bg-glow-2: rgba(236, 72, 153, 0.12);
+        --surface: #171a26;
+        --surface-2: #1f2333;
+        --border: #2a2f42;
+        --text: #e7e9f3;
+        --text-muted: #9097b1;
+        --accent: #818cf8;
+        --accent-2: #c084fc;
+        --accent-soft: rgba(129, 140, 248, 0.16);
+        --danger: #fb7185;
+        --danger-soft: rgba(251, 113, 133, 0.14);
+        --toast-bg: #e7e9f3;
+        --toast-fg: #11131c;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-md: 0 14px 30px -12px rgba(0, 0, 0, 0.6);
+        --shadow-lg: 0 30px 70px -16px rgba(0, 0, 0, 0.75);
+        --hue-s: 70%;
+        --avatar-bg-l: 24%;
+        --avatar-fg-l: 78%;
+        --stripe-l: 62%;
+        --folder-l: 68%;
+        color-scheme: dark;
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(900px 520px at 0% -10%, var(--bg-glow-1), transparent 60%),
+        radial-gradient(800px 520px at 100% 0%, var(--bg-glow-2), transparent 60%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    a,
+    button,
+    summary,
+    input,
+    select,
+    textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .icon-slot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+
+    .icon {
+      width: 1.15em;
+      height: 1.15em;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-grip {
+      stroke-width: 3.2;
+    }
+
+    /* ---- Header ---- */
+
+    #app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      backdrop-filter: blur(14px) saturate(1.4);
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    }
+
+    .header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 14px 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #ffffff;
+      box-shadow: 0 8px 18px -8px var(--accent);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    #bookmark-count {
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #bookmark-count:empty {
+      display: none;
+    }
+
+    .search {
+      position: relative;
+      display: flex;
+      align-items: center;
+      flex: 1 1 280px;
+      max-width: 560px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    #search-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 40px 0 38px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      font: inherit;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .search-hint {
+      position: absolute;
+      right: 10px;
+      padding: 1px 7px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    .search:focus-within .search-hint {
+      display: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    /* ---- Buttons ---- */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      height: 38px;
+      padding: 0 14px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font: inherit;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, filter 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: progress;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-color: transparent;
+      color: #ffffff;
+      box-shadow: 0 8px 18px -10px var(--accent);
+    }
+
+    .btn-primary:hover {
+      border-color: transparent;
+      color: #ffffff;
+      filter: brightness(1.07);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      border-color: transparent;
+      color: #ffffff;
+    }
+
+    .btn-danger:hover {
+      border-color: transparent;
+      color: #ffffff;
+      filter: brightness(1.07);
+    }
+
+    .btn-icon {
+      width: 38px;
+      padding: 0;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--surface-2);
+      color: var(--accent);
+    }
+
+    .icon-btn-danger:hover {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    #view-toggle {
+      display: inline-flex;
+      padding: 3px;
+      gap: 2px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+    }
+
+    .view-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 11px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .view-toggle-btn:hover {
+      color: var(--text);
+    }
+
+    .view-toggle-btn[aria-pressed="true"] {
+      background: var(--surface);
+      color: var(--accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ---- Page ---- */
+
+    .page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    #bookmark-list[data-view="grid"] {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: var(--gap);
+    }
+
+    /* ---- Shared card pieces ---- */
+
+    .bookmark-item {
+      position: relative;
+      min-width: 0;
+    }
+
+    .bookmark-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      grid-area: avatar;
+      background: hsl(var(--hue) var(--hue-s) var(--avatar-bg-l));
+      color: hsl(var(--hue) var(--hue-s) var(--avatar-fg-l));
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .bookmark-main {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      grid-area: main;
+      min-width: 0;
+    }
+
+    .bookmark-title {
+      color: var(--text);
+      font-weight: 600;
+      text-decoration: none;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .bookmark-title:hover {
+      color: hsl(var(--hue) var(--hue-s) var(--folder-l));
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .bookmark-url {
+      color: var(--text-muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bookmark-folder {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      align-self: flex-start;
+      max-width: 100%;
+      margin-top: 6px;
+      padding: 2px 8px;
+      background: var(--surface-2);
+      color: var(--text-muted);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .bookmark-folder-path {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bookmark-folder .icon {
+      flex: none;
+      color: hsl(var(--hue) var(--hue-s) var(--folder-l));
+    }
+
+    .bookmark-note {
+      grid-area: note;
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      resize: vertical;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font: inherit;
+      font-size: 13px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    .bookmark-note::placeholder {
+      color: var(--text-muted);
+    }
+
+    .bookmark-note:focus {
+      outline: none;
+      background: var(--surface);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .bookmark-note-status {
+      grid-area: status;
+      min-height: 14px;
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .bookmark-actions {
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+      grid-area: actions;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .bookmark-item:hover .bookmark-actions,
+    .bookmark-item:focus-within .bookmark-actions {
+      opacity: 1;
+    }
+
+    .drag-handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      grid-area: handle;
+      width: 16px;
+      color: var(--text-muted);
+      cursor: grab;
+      opacity: 0.35;
+      transition: opacity 0.15s ease;
+    }
+
+    .drag-handle-spacer {
+      flex: none;
+      width: 16px;
+    }
+
+    .bookmark-item:hover .drag-handle,
+    .bookmark-folder-header:hover .drag-handle {
+      opacity: 1;
+    }
+
+    .is-dragging {
+      opacity: 0.4;
+    }
+
+    /* ---- Grid view ---- */
+
+    #bookmark-list[data-view="grid"] .bookmark-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        "avatar main actions"
+        "note note note"
+        "status status status";
+      gap: 10px 12px;
+      padding: 18px 16px 10px;
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    #bookmark-list[data-view="grid"] .bookmark-item::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg,
+        hsl(var(--hue) var(--hue-s) var(--stripe-l)),
+        hsl(calc(var(--hue) + 40) var(--hue-s) var(--stripe-l)));
+    }
+
+    #bookmark-list[data-view="grid"] .bookmark-item:hover {
+      transform: translateY(-2px);
+      border-color: hsl(var(--hue) var(--hue-s) var(--stripe-l) / 0.55);
+      box-shadow: var(--shadow-md);
+    }
+
+    #bookmark-list[data-view="grid"] .bookmark-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 17px;
+    }
+
+    #bookmark-list[data-view="grid"] .bookmark-note-status {
+      margin-top: -6px;
+    }
+
+    /* ---- List view: indented folder tree ---- */
+
+    #bookmark-list[data-view="list"] {
+      padding: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .bookmark-folder-group {
+      border-radius: var(--radius-sm);
+      transition: background-color 0.15s ease;
+    }
+
+    .bookmark-folder-group + .bookmark-folder-group,
+    .bookmark-item + .bookmark-folder-group {
+      margin-top: 2px;
+    }
+
+    .bookmark-folder-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 4px 8px;
+      list-style: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease;
+    }
+
+    .bookmark-folder-header::-webkit-details-marker {
+      display: none;
+    }
+
+    .bookmark-folder-header::marker {
+      content: "";
+    }
+
+    .bookmark-folder-header:hover {
+      background: var(--surface-2);
+    }
+
+    .folder-chevron {
+      color: var(--text-muted);
+      transition: transform 0.18s ease;
+    }
+
+    .bookmark-folder-group[open] > .bookmark-folder-header .folder-chevron {
+      transform: rotate(90deg);
+    }
+
+    .folder-icon {
+      color: hsl(var(--hue) var(--hue-s) var(--folder-l));
+    }
+
+    .folder-icon .icon {
+      width: 1.3em;
+      height: 1.3em;
+      fill: hsl(var(--hue) var(--hue-s) var(--folder-l) / 0.18);
+    }
+
+    .bookmark-folder-title {
+      min-width: 0;
+      overflow: hidden;
+      font-weight: 650;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .bookmark-folder-count {
+      flex: none;
+      padding: 0 8px;
+      background: hsl(var(--hue) var(--hue-s) var(--folder-l) / 0.14);
+      color: hsl(var(--hue) var(--hue-s) var(--folder-l));
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 18px;
+    }
+
+    .folder-actions {
+      display: flex;
+      gap: 2px;
+      margin-left: auto;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .bookmark-folder-header:hover .folder-actions,
+    .bookmark-folder-header:focus-within .folder-actions {
+      opacity: 1;
+    }
+
+    .bookmark-folder-children {
+      margin-left: 31px;
+      padding: 2px 0 6px 10px;
+      border-left: 2px solid hsl(var(--hue) var(--hue-s) var(--folder-l) / 0.3);
+    }
+
+    .bookmark-folder-children:empty::after {
+      content: "Empty folder: drag bookmarks here";
+      display: block;
+      padding: 6px 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-item {
+      display: grid;
+      /* Fixed note/status/actions widths keep note boxes aligned at every indent level. */
+      grid-template-columns: 16px 30px minmax(0, 1fr) min(34vw, 380px) 48px 64px;
+      grid-template-areas: "handle avatar main note status actions";
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-item:hover {
+      background: var(--surface-2);
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      font-size: 13px;
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-title {
+      -webkit-line-clamp: 1;
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-note {
+      min-height: 32px;
+      padding: 5px 10px;
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-item:hover .bookmark-note:not(:focus) {
+      background: var(--surface);
+    }
+
+    #bookmark-list[data-view="list"] .bookmark-actions {
+      align-items: center;
+    }
+
+    .bookmark-folder-group.is-drop-target {
+      background: color-mix(in srgb, var(--accent) 7%, transparent);
+    }
+
+    .bookmark-folder-group.is-drop-target > .bookmark-folder-header {
+      background: var(--accent-soft);
+      box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    body.is-dragging-bookmark .bookmark-actions,
+    body.is-dragging-bookmark .folder-actions {
+      visibility: hidden;
+    }
+
+    /* ---- Empty state ---- */
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: 56px 24px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .empty-state .icon-slot {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 24px;
+    }
+
+    /* ---- Settings ---- */
+
+    #settings-panel {
+      margin-top: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      scroll-margin-top: 90px;
+    }
+
+    #settings-panel > summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-weight: 650;
+      list-style: none;
+      user-select: none;
+    }
+
+    #settings-panel > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    #settings-panel > summary::marker {
+      content: "";
+    }
+
+    #settings-panel > summary .folder-chevron {
+      transition: transform 0.18s ease;
+    }
+
+    #settings-panel[open] > summary .folder-chevron {
+      transform: rotate(90deg);
+    }
+
+    #settings-panel .settings-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 18px 18px;
+    }
+
+    #settings-panel label {
+      font-weight: 650;
+    }
+
+    #css-editor {
+      width: 100%;
+      min-height: 220px;
+      padding: 12px;
+      resize: vertical;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--mono);
+      font-size: 13px;
+      tab-size: 2;
+    }
+
+    #css-editor:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .settings-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #settings-status {
+      color: var(--text-muted);
+    }
+
+    .selector-reference {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .selector-reference code {
+      padding: 2px 6px;
+      background: var(--surface-2);
+      color: var(--accent);
+      border-radius: 5px;
+      font-family: var(--mono);
+    }
+
+    /* ---- Dialogs ---- */
+
+    .modal {
+      width: min(460px, calc(100vw - 32px));
+      padding: 0;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal[open] {
+      animation: modal-in 0.18s ease-out;
+    }
+
+    .modal::backdrop {
+      background: rgba(10, 12, 25, 0.45);
+      backdrop-filter: blur(3px);
+    }
+
+    .modal form {
+      padding: 24px;
+    }
+
+    .modal h2 {
+      margin: 0 0 18px;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .modal p {
+      margin: 0 0 18px;
+      color: var(--text-muted);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .field-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .field input,
+    .field select {
+      height: 42px;
+      padding: 0 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font: inherit;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .form-error {
+      min-height: 18px;
+      margin: 0 0 8px;
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    @keyframes modal-in {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+    }
+
+    /* ---- Toasts ---- */
+
+    #toast-region {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .toast {
+      max-width: min(480px, calc(100vw - 32px));
+      padding: 10px 16px;
+      background: var(--toast-bg);
+      color: var(--toast-fg);
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      font-weight: 600;
+      animation: toast-in 0.2s ease-out;
+    }
+
+    .toast-success {
+      border-left: 4px solid #10b981;
+    }
+
+    .toast-error {
+      border-left: 4px solid var(--danger);
+    }
+
+    .toast-leaving {
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+    }
+
+    /* ---- Responsive & accessibility ---- */
+
+    @media (hover: none) {
+      .bookmark-actions,
+      .folder-actions {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .btn-label {
+        display: none;
+      }
+
+      .btn:has(.btn-label) {
+        width: 38px;
+        padding: 0;
+      }
+
+      .view-toggle-btn {
+        padding: 0 9px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .header-inner,
+      .page {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .search {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+      }
+
+      #bookmark-list[data-view="list"] .bookmark-item {
+        grid-template-columns: 16px 30px minmax(0, 1fr) auto;
+        grid-template-areas:
+          "handle avatar main actions"
+          ". note note note"
+          ". status status status";
+        gap: 6px 10px;
+        padding: 8px;
+      }
+
+      .bookmark-folder-children {
+        margin-left: 14px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header id="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-mark icon-slot" data-icon="bookmark"></span>
+        <h1>Bookmarks</h1>
+        <span id="bookmark-count"></span>
+      </div>
+
+      <label class="search" for="search-input">
+        <span class="search-icon icon-slot" data-icon="search"></span>
+        <input id="search-input" type="search" placeholder="Search bookmarks and notes" autocomplete="off" spellcheck="false">
+        <kbd class="search-hint">/</kbd>
+      </label>
+
+      <div class="header-actions">
+        <div id="view-toggle" role="group" aria-label="View">
+          <button type="button" class="view-toggle-btn" data-view="grid" aria-pressed="true" title="Blocks view">
+            <span class="icon-slot" data-icon="grid"></span><span class="btn-label">Blocks</span>
+          </button>
+          <button type="button" class="view-toggle-btn" data-view="list" aria-pressed="false" title="List view">
+            <span class="icon-slot" data-icon="list"></span><span class="btn-label">List</span>
+          </button>
+        </div>
+        <button type="button" id="add-folder-btn" class="btn" title="New folder">
+          <span class="icon-slot" data-icon="folderPlus"></span><span class="btn-label">New folder</span>
+        </button>
+        <button type="button" id="add-bookmark-btn" class="btn btn-primary" title="Add bookmark">
+          <span class="icon-slot" data-icon="plus"></span><span class="btn-label">Add bookmark</span>
+        </button>
+        <button type="button" id="settings-btn" class="btn btn-icon" aria-label="Settings" title="Settings" aria-controls="settings-panel" aria-expanded="false">
+          <span class="icon-slot" data-icon="sliders"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section id="bookmark-list" aria-label="Bookmarks"></section>
+
+    <details id="settings-panel">
+      <summary><span class="folder-chevron icon-slot" data-icon="chevron"></span>Settings</summary>
+      <div class="settings-body">
+        <label for="css-editor">Custom CSS</label>
+        <p class="selector-reference">
+          Available selectors:
+          <code>#bookmark-list</code>
+          <code>[data-view="grid"]</code>
+          <code>[data-view="list"]</code>
+          <code>.bookmark-item</code>
+          <code>.bookmark-avatar</code>
+          <code>.bookmark-title</code>
+          <code>.bookmark-url</code>
+          <code>.bookmark-folder</code>
+          <code>.bookmark-note</code>
+          <code>.bookmark-folder-group</code>
+          <code>.bookmark-folder-header</code>
+          <code>.bookmark-folder-children</code>
+          <code>#settings-panel</code>
+          <code>#css-editor</code>.
+          Override theme variables such as <code>--accent</code>, <code>--accent-2</code>, <code>--bg</code>, or <code>--radius</code> on <code>:root</code>.
+          Press Ctrl+S (Cmd+S on Mac) in the editor to save.
+        </p>
+        <textarea id="css-editor" spellcheck="false" placeholder=":root { --accent: #e11d48; --accent-2: #f97316; }&#10;.bookmark-item { border-radius: 4px; }"></textarea>
+        <div class="settings-actions">
+          <button type="button" id="save-style-btn" class="btn btn-primary">Save Style</button>
+          <button type="button" id="reset-style-btn" class="btn">Reset Style</button>
+          <span id="settings-status" role="status"></span>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <dialog id="edit-dialog" class="modal" aria-labelledby="edit-dialog-title">
+    <form id="edit-form" novalidate>
+      <h2 id="edit-dialog-title">Add bookmark</h2>
+      <label class="field" id="edit-url-field">
+        <span class="field-label">URL</span>
+        <input id="edit-url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="example.com">
+      </label>
+      <label class="field">
+        <span class="field-label" id="edit-title-label">Title</span>
+        <input id="edit-title" type="text" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="field-label">Folder</span>
+        <select id="edit-parent"></select>
+      </label>
+      <p id="edit-error" class="form-error" role="alert"></p>
+      <div class="modal-actions">
+        <button type="button" id="edit-cancel" class="btn">Cancel</button>
+        <button type="submit" id="edit-submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="modal" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title">Are you sure?</h2>
+      <p id="confirm-message"></p>
+      <div class="modal-actions">
+        <button type="submit" value="cancel" class="btn">Cancel</button>
+        <button type="submit" value="confirm" id="confirm-ok" class="btn btn-danger">Delete</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast-region" aria-live="polite"></div>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
