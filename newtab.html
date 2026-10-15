@@ -14,7 +14,7 @@
       #bookmark-count             "N bookmarks" label
       #search-input               Search box
       #view-toggle                Blocks / List switch (.view-toggle-btn[aria-pressed])
-      #add-bookmark-btn, #add-folder-btn, #settings-btn   Toolbar buttons
+      #add-bookmark-btn, #add-folder-btn   Toolbar buttons
       #bookmark-list              Main container; data-view="grid" or "list"
                                   (body carries the same data-view attribute)
       .bookmark-item              Bookmark card / row (data-bookmark-id, --hue)
@@ -34,7 +34,12 @@
       .bookmark-folder-children   List view: indented contents of a folder
       .is-drop-target             Folder currently highlighted while dragging
       .empty-state                Message shown when nothing is listed
-      #settings-panel             Collapsible settings container (<details>)
+      #backdrop                   Fixed photo layer (.backdrop-image children; ::after is the darken overlay)
+      #start                      Start page; contains #settings-btn, #clock, #date-line, #start-search, #top-sites, #photo-credit
+      .top-site, .top-site-icon, .top-site-letter, .top-site-title, .top-site-hide
+      #search-suggestions .suggestion   Bookmark suggestions under the start search
+      #sheet, #sheet-handle, #sheet-body   Bottom sheet; body[data-sheet="open"|"closed"]
+      #settings-panel             Settings dialog (.settings-section, .setting-row)
       #css-editor                 Custom CSS textarea
       #save-style-btn, #reset-style-btn, #settings-status
       .modal                      Add / edit / confirm dialogs
@@ -43,7 +48,8 @@
     Theme variables (override these on :root for quick re-theming):
       --bg, --surface, --surface-2, --border, --text, --text-muted,
       --accent, --accent-2, --danger, --radius, --radius-sm, --gap, --font,
-      --hue-s, --avatar-bg-l, --avatar-fg-l, --stripe-l, --folder-l
+      --hue-s, --avatar-bg-l, --avatar-fg-l, --stripe-l, --folder-l,
+      --glass-bg, --glass-border, --darken
   -->
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/start.css">
@@ -54,6 +60,9 @@
   <div id="backdrop" aria-hidden="true"></div>
 
   <main id="start">
+    <button type="button" id="settings-btn" class="start-corner-btn" aria-label="Settings" title="Settings">
+      <span class="icon-slot" data-icon="sliders"></span>
+    </button>
     <div class="start-center">
       <time id="clock"></time>
       <p id="date-line"><span id="date-text"></span><span id="date-sep" aria-hidden="true"> · </span><span id="greeting"></span></p>
@@ -103,50 +112,100 @@
             <button type="button" id="add-bookmark-btn" class="btn btn-primary" title="Add bookmark">
               <span class="icon-slot" data-icon="plus"></span><span class="btn-label">Add bookmark</span>
             </button>
-            <button type="button" id="settings-btn" class="btn btn-icon" aria-label="Settings" title="Settings" aria-controls="settings-panel" aria-expanded="false">
-              <span class="icon-slot" data-icon="sliders"></span>
-            </button>
           </div>
         </div>
       </header>
 
       <div class="page">
         <section id="bookmark-list" aria-label="Bookmarks"></section>
-
-        <details id="settings-panel">
-          <summary><span class="folder-chevron icon-slot" data-icon="chevron"></span>Settings</summary>
-          <div class="settings-body">
-            <label for="css-editor">Custom CSS</label>
-            <p class="selector-reference">
-              Available selectors:
-              <code>#bookmark-list</code>
-              <code>[data-view="grid"]</code>
-              <code>[data-view="list"]</code>
-              <code>.bookmark-item</code>
-              <code>.bookmark-avatar</code>
-              <code>.bookmark-title</code>
-              <code>.bookmark-url</code>
-              <code>.bookmark-folder</code>
-              <code>.bookmark-note</code>
-              <code>.bookmark-folder-group</code>
-              <code>.bookmark-folder-header</code>
-              <code>.bookmark-folder-children</code>
-              <code>#settings-panel</code>
-              <code>#css-editor</code>.
-              Override theme variables such as <code>--accent</code>, <code>--accent-2</code>, <code>--bg</code>, or <code>--radius</code> on <code>:root</code>.
-              Press Ctrl+S (Cmd+S on Mac) in the editor to save.
-            </p>
-            <textarea id="css-editor" spellcheck="false" placeholder=":root { --accent: #e11d48; --accent-2: #f97316; }&#10;.bookmark-item { border-radius: 4px; }"></textarea>
-            <div class="settings-actions">
-              <button type="button" id="save-style-btn" class="btn btn-primary">Save Style</button>
-              <button type="button" id="reset-style-btn" class="btn">Reset Style</button>
-              <span id="settings-status" role="status"></span>
-            </div>
-          </div>
-        </details>
       </div>
     </div>
   </section>
+
+  <dialog id="settings-panel" aria-labelledby="settings-title">
+    <div class="settings-scroll">
+      <div class="settings-header">
+        <h2 id="settings-title">Settings</h2>
+        <button type="button" id="settings-close" class="icon-btn" aria-label="Close settings" title="Close"><span class="icon-slot" data-icon="x"></span></button>
+      </div>
+
+      <section class="settings-section" aria-labelledby="settings-bg-title">
+        <h3 id="settings-bg-title">Background</h3>
+        <label class="setting-row"><span>Bundled photos</span><input type="checkbox" data-setting="bundledPhotos"></label>
+        <label class="setting-row"><span>Change photo</span>
+          <select data-setting="photoFrequency">
+            <option value="every-tab">Every new tab</option>
+            <option value="hourly">Every hour</option>
+            <option value="daily">Every day</option>
+          </select>
+        </label>
+        <div class="setting-row"><span>Photo</span>
+          <button type="button" id="next-photo" class="btn btn-small"><span class="icon-slot" data-icon="skip"></span>Next photo</button>
+        </div>
+        <label class="setting-row"><span>Darken <output id="darken-value"></output></span>
+          <input type="range" min="0" max="60" step="5" data-setting="darken">
+        </label>
+        <div id="photos-block"></div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-clock-title">
+        <h3 id="settings-clock-title">Clock &amp; greeting</h3>
+        <label class="setting-row"><span>Show clock</span><input type="checkbox" data-setting="showClock"></label>
+        <label class="setting-row"><span>Show date</span><input type="checkbox" data-setting="showDate"></label>
+        <label class="setting-row"><span>Show greeting</span><input type="checkbox" data-setting="showGreeting"></label>
+        <label class="setting-row"><span>Time format</span>
+          <select data-setting="timeFormat">
+            <option value="auto">Automatic</option>
+            <option value="12h">12-hour</option>
+            <option value="24h">24-hour</option>
+          </select>
+        </label>
+        <label class="setting-row"><span>Your name</span><input type="text" maxlength="40" placeholder="Optional" data-setting="name" autocomplete="off"></label>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-search-title">
+        <h3 id="settings-search-title">Search</h3>
+        <label class="setting-row"><span>Show search box</span><input type="checkbox" data-setting="showSearch"></label>
+        <label class="setting-row"><span>Suggest matching bookmarks</span><input type="checkbox" data-setting="searchSuggestions"></label>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-sites-title">
+        <h3 id="settings-sites-title">Top sites</h3>
+        <label class="setting-row"><span>Number of sites <output id="top-sites-count-value"></output></span>
+          <input type="range" min="0" max="12" step="1" data-setting="topSitesCount">
+        </label>
+        <div class="setting-row" id="restore-top-sites-row"><span>Hidden sites</span>
+          <button type="button" id="restore-top-sites" class="btn btn-small">Restore hidden sites</button>
+        </div>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-bookmarks-title">
+        <h3 id="settings-bookmarks-title">Bookmarks</h3>
+        <label class="setting-row"><span>Open new tabs with bookmarks showing</span><input type="checkbox" data-setting="openSheetOnStart"></label>
+      </section>
+
+      <section class="settings-section" aria-labelledby="settings-css-title">
+        <h3 id="settings-css-title">Custom CSS</h3>
+        <p class="selector-reference">
+          Selectors:
+          <code>#start</code> <code>#clock</code> <code>#date-line</code> <code>#start-search</code>
+          <code>#top-sites</code> <code>.top-site</code> <code>#backdrop</code> <code>#sheet</code>
+          <code>#sheet-handle</code> <code>#bookmark-list</code> <code>[data-view="grid"]</code>
+          <code>[data-view="list"]</code> <code>.bookmark-item</code> <code>.bookmark-avatar</code>
+          <code>.bookmark-title</code> <code>.bookmark-url</code> <code>.bookmark-note</code>
+          <code>.bookmark-folder-group</code> <code>#settings-panel</code>.
+          Override variables such as <code>--accent</code>, <code>--glass-bg</code> or <code>--radius</code> on <code>:root</code>.
+          Press Ctrl+S (Cmd+S on Mac) in the editor to save.
+        </p>
+        <textarea id="css-editor" spellcheck="false" aria-label="Custom CSS" placeholder=":root { --accent: #e11d48; }&#10;#clock { font-weight: 600; }"></textarea>
+        <div class="settings-actions">
+          <button type="button" id="save-style-btn" class="btn btn-primary">Save Style</button>
+          <button type="button" id="reset-style-btn" class="btn">Reset Style</button>
+          <span id="settings-status" role="status"></span>
+        </div>
+      </section>
+    </div>
+  </dialog>
 
   <dialog id="edit-dialog" class="modal" aria-labelledby="edit-dialog-title">
     <form id="edit-form" novalidate>
