@@ -161,6 +161,9 @@ async function updateBackground({ force = false } = {}) {
 
 function applyDarken(settings) {
   document.documentElement.style.setProperty("--darken", String(settings.darken / 100));
+  document.documentElement.style.setProperty("--blur", `${settings.blur}px`);
+  // Enlarge the photo slightly with the blur so its soft edges stay off-screen.
+  document.documentElement.style.setProperty("--blur-scale", String(1 + settings.blur / 200));
 }
 
 // Paints the last bundled photo straight away so a new tab never flashes empty.

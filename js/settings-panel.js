@@ -29,6 +29,7 @@ function render(settings) {
     writeControl(control, settings[control.dataset.setting]);
   }
   $("darken-value").textContent = `${settings.darken}%`;
+  $("blur-value").textContent = settings.blur === 0 ? "Off" : `${settings.blur}px`;
   $("top-sites-count-value").textContent = String(settings.topSitesCount);
   $("restore-top-sites-row").hidden = settings.hiddenTopSites.length === 0;
 }

@@ -1,6 +1,7 @@
 export const PHOTO_FREQUENCIES = ["every-tab", "hourly", "daily"];
 export const TIME_FORMATS = ["auto", "12h", "24h"];
 export const DARKEN_MAX = 60;
+export const BLUR_MAX = 20;
 export const TOP_SITES_MAX = 12;
 export const NAME_MAX_LENGTH = 40;
 
@@ -8,6 +9,7 @@ export const DEFAULTS = Object.freeze({
   bundledPhotos: true,
   photoFrequency: "daily",
   darken: 25,
+  blur: 0,
   showClock: true,
   showDate: true,
   showGreeting: true,
@@ -28,6 +30,8 @@ const VALIDATORS = {
   bundledPhotos: isBoolean,
   photoFrequency: isOneOf(PHOTO_FREQUENCIES),
   darken: isIntegerIn(0, DARKEN_MAX),
+  // Even pixel steps, matching the slider.
+  blur: (value) => isIntegerIn(0, BLUR_MAX)(value) && value % 2 === 0,
   showClock: isBoolean,
   showDate: isBoolean,
   showGreeting: isBoolean,

@@ -7,6 +7,7 @@ test("defaults match the spec", () => {
     bundledPhotos: true,
     photoFrequency: "daily",
     darken: 25,
+    blur: 0,
     showClock: true,
     showDate: true,
     showGreeting: true,
@@ -70,4 +71,13 @@ test("result does not share arrays with the input or defaults", () => {
   merged.hiddenTopSites.push("https://b.com/");
   assert.deepEqual(stored.hiddenTopSites, ["https://a.com/"]);
   assert.deepEqual(DEFAULTS.hiddenTopSites, []);
+});
+
+test("blur accepts even integers from 0 to 20 and falls back to 0", () => {
+  assert.equal(mergeSettings({ blur: 0 }).blur, 0);
+  assert.equal(mergeSettings({ blur: 12 }).blur, 12);
+  assert.equal(mergeSettings({ blur: 20 }).blur, 20);
+  for (const bad of [21, -2, 3, 4.5, "8", null]) {
+    assert.equal(mergeSettings({ blur: bad }).blur, 0, String(bad));
+  }
 });
