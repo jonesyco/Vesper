@@ -60,3 +60,21 @@ test("toNavigableUrl uses http for local hosts and https otherwise", () => {
   assert.equal(toNavigableUrl("example.com"), "https://example.com/");
   assert.equal(toNavigableUrl("http://example.com"), "http://example.com/");
 });
+
+test("common file and project names search instead of navigating", () => {
+  for (const text of [
+    "app.jsx", "main.tsx", "index.php", "photo.jpeg", "Cargo.toml", "notes.log", "style.scss",
+    "README.rst", "data.sql", "app.vue", "image.webp", "x.gif", "next.config.js", "vue.config.js"
+  ]) {
+    assert.equal(looksLikeUrl(text), false, text);
+  }
+});
+
+test("real domains with country or common generic TLDs still navigate", () => {
+  for (const text of [
+    "bbc.co.uk", "allegro.pl", "jonesyco.github.io", "news.ycombinator.com", "x.ai", "vercel.app",
+    "web.dev", "example.org", "wikipedia.org", "spiegel.de", "nos.nl", "example.net"
+  ]) {
+    assert.equal(looksLikeUrl(text), true, text);
+  }
+});

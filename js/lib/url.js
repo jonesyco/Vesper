@@ -16,10 +16,23 @@ export function normalizeUrl(input) {
   return parsed.href;
 }
 
-// Extensions that are also TLDs: "node.js" alone is far more likely a search.
+// File extensions: "node.js" or "next.config.js" alone is far more likely a search.
 const FILE_EXTENSIONS = new Set([
-  "js", "ts", "md", "py", "txt", "json", "css", "html", "rs", "go", "sh",
-  "yml", "yaml", "xml", "csv", "pdf", "doc", "docx", "png", "jpg", "zip", "exe"
+  "js", "jsx", "mjs", "cjs", "ts", "tsx", "vue", "svelte", "md", "rst", "txt", "log", "py", "rb",
+  "php", "java", "kt", "swift", "rs", "go", "sh", "bat", "ps1", "lua", "sql", "c", "h", "cpp", "hpp",
+  "json", "toml", "yml", "yaml", "ini", "cfg", "conf", "lock", "xml", "csv", "css", "scss", "sass",
+  "less", "html", "htm", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "png", "jpg", "jpeg",
+  "gif", "webp", "svg", "ico", "mp3", "mp4", "mov", "wav", "zip", "tar", "gz", "exe", "dll", "iso"
+]);
+
+// Generic TLDs accepted for a bare "name.tld"; any two-letter country code is accepted too.
+// Anything else (an unusual or new TLD) needs a path, a port or https:// to count as an address.
+const GENERIC_TLDS = new Set([
+  "com", "net", "org", "edu", "gov", "mil", "int", "info", "biz", "name", "pro", "mobi", "app",
+  "dev", "page", "blog", "cloud", "online", "site", "website", "tech", "store", "shop", "news",
+  "live", "wiki", "xyz", "art", "design", "studio", "media", "email", "link", "network", "systems",
+  "digital", "agency", "world", "today", "life", "social", "space", "club", "top", "one", "museum",
+  "travel", "jobs", "aero", "coop"
 ]);
 
 function isLocalHost(host) {
@@ -51,8 +64,14 @@ export function looksLikeUrl(input) {
   if (!/^\p{L}{2,24}$/u.test(tld)) {
     return false;
   }
-  const bare = labels.length === 2 && !match[2] && !match[3];
-  return !(bare && FILE_EXTENSIONS.has(tld));
+  if (match[2] || match[3]) {
+    return true; // A port or path makes it clearly an address.
+  }
+  if (FILE_EXTENSIONS.has(tld)) {
+    return false;
+  }
+  // Non-ASCII TLDs (such as .рф) are internationalised country or brand domains.
+  return tld.length === 2 || GENERIC_TLDS.has(tld) || /[^a-z]/.test(tld);
 }
 
 // The text to search for: trimmed, without a leading "?" (which forces a search).
