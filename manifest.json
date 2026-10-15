@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Bookmark Homepage",
+  "name": "Vesper",
   "version": "2.0.0",
   "description": "A calm start page with a photo, clock, search and your most visited sites, plus your bookmarks one swipe away: grid and folder views, notes and custom CSS.",
   "permissions": [
@@ -15,7 +15,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "bookmark-homepage@extension",
+      "id": "vesper@extension",
       "strict_min_version": "128.0",
       "data_collection_permissions": {
         "required": [

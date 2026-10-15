@@ -1,4 +1,4 @@
-# NewTab
+# Vesper
 
 A browser extension that replaces the New Tab page with a calm start page, with your bookmarks one swipe away. Works in Chrome (and other Chromium browsers such as Edge and Brave) and Firefox.
 
@@ -32,7 +32,7 @@ Bookmark changes go straight to your browser's real bookmarks. Notes, settings, 
 Clone the repository:
 
 ```sh
-git clone https://github.com/jonesyco/NewTab.git
+git clone https://github.com/jonesyco/Vesper.git
 ```
 
 Or download it from GitHub with **Code → Download ZIP** and unzip it. Keep the folder somewhere permanent: the browser loads the extension from this folder.
@@ -43,7 +43,7 @@ Edge, Brave and other Chromium browsers work the same way. Their extensions page
 
 1. Go to `chrome://extensions`.
 2. Turn on **Developer mode** (top-right switch).
-3. Click **Load unpacked** and select the `NewTab` folder (the one containing `manifest.json`).
+3. Click **Load unpacked** and select the `Vesper` folder (the one containing `manifest.json`).
 4. Open a new tab. If Chrome asks whether you meant to change the New Tab page, choose **Keep it**.
 
 Chrome may show *Unrecognized manifest key 'browser_specific_settings'* on the extension's card. That key is only for Firefox, and the warning is harmless.
@@ -59,7 +59,7 @@ Firefox 128 or newer is required. Firefox shows a warning that `favicon` is an u
 ### Quick test (removed when Firefox restarts)
 
 1. Go to `about:debugging#/runtime/this-firefox`.
-2. Click **Load Temporary Add-on…** and select the `manifest.json` file inside the `NewTab` folder.
+2. Click **Load Temporary Add-on…** and select the `manifest.json` file inside the `Vesper` folder.
 3. Open a new tab. If Firefox says an extension has changed your New Tab page, choose **Keep Changes**.
 
 **Updating:** click **Reload** next to the extension in `about:debugging`.
@@ -69,7 +69,7 @@ Firefox 128 or newer is required. Firefox shows a warning that `favicon` is an u
 Regular Firefox only keeps add-ons that Mozilla has signed. You can sign it privately, without listing it publicly:
 
 1. Create API credentials at <https://addons.mozilla.org/developers/addon/api/key/>. You'll need a free Firefox account.
-2. From the `NewTab` folder, run:
+2. From the `Vesper` folder, run:
 
    ```sh
    npx web-ext sign --channel=unlisted --api-key=YOUR_KEY --api-secret=YOUR_SECRET --ignore-files "test/**" "docs/**" package.json
@@ -77,7 +77,7 @@ Regular Firefox only keeps add-ons that Mozilla has signed. You can sign it priv
 
 3. Open the `.xpi` file it creates in `web-ext-artifacts/` with Firefox (drag it into a Firefox window) and confirm the install.
 
-Before signing, change the add-on ID in `manifest.json` (`browser_specific_settings.gecko.id`) from `bookmark-homepage@extension` to something unique to you, such as `newtab@yourdomain.com`.
+Before signing, change the add-on ID in `manifest.json` (`browser_specific_settings.gecko.id`) from `vesper@extension` to something unique to you, such as `vesper@yourdomain.com`.
 
 Firefox Developer Edition, Nightly and ESR can instead install unsigned add-ons: set `xpinstall.signatures.required` to `false` in `about:config`. Then zip the folder's contents and install the zip from `about:addons` → gear menu → **Install Add-on From File…**.
 
