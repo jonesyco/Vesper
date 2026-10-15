@@ -2,6 +2,7 @@ import { api } from "./api.js";
 import { $, createElement } from "./ui.js";
 import { BUNDLED_PHOTOS } from "./lib/bundled-photos.js";
 import { resolveBackground } from "./lib/rotation.js";
+import * as images from "./image-store.js";
 import { getSettings, subscribe } from "./settings-store.js";
 
 export const USER_PHOTO_PREFIX = "user:";
@@ -13,13 +14,10 @@ const FADE_CLEANUP_DELAY_MS = 700;
 let currentId = null;
 let currentObjectUrl = null;
 let generation = 0;
-// Overridden by the user-photos settings; until then there are no user photos.
-let listUserPhotoIds = async () => [];
-let loadUserPhoto = async () => null;
 
-export function setUserPhotoSource({ listIds, load }) {
-  listUserPhotoIds = listIds;
-  loadUserPhoto = load;
+// Read straight from IndexedDB so the very first pick already sees user photos.
+async function listUserPhotoIds() {
+  return (await images.isAvailable()) ? images.listPhotoIds() : [];
 }
 
 function readCache() {
@@ -83,7 +81,7 @@ async function buildPool(settings) {
 
 async function sourceFor(id) {
   if (id.startsWith(USER_PHOTO_PREFIX)) {
-    const blob = await loadUserPhoto(id.slice(USER_PHOTO_PREFIX.length));
+    const blob = await images.getPhotoBlob(id.slice(USER_PHOTO_PREFIX.length));
     if (!blob) {
       throw new Error(`Photo ${id} is missing`);
     }
@@ -145,7 +143,7 @@ async function updateBackground({ force = false } = {}) {
     } else if (source.isObjectUrl) {
       URL.revokeObjectURL(source.src);
     }
-    writeCache(source.file ? { id: decision.id, file: source.file, credit: source.credit } : null);
+    writeCache(source.file ? { id: decision.id, file: source.file, credit: source.credit, frequency: settings.photoFrequency } : null);
     if (decision.changed) {
       try {
         await api.storage.local.set({ [STATE_STORAGE_KEY]: { id: decision.id, pickedAt: decision.pickedAt } });
@@ -168,7 +166,8 @@ function applyDarken(settings) {
 // Paints the last bundled photo straight away so a new tab never flashes empty.
 export function paintCachedBackground() {
   const cached = readCache();
-  if (cached) {
+  // In every-tab mode this tab gets a different photo, so painting the old one would flash.
+  if (cached && cached.frequency !== "every-tab") {
     showLayer(cached.file, cached.credit || "", false);
     currentId = cached.id;
   }

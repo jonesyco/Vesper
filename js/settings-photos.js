@@ -1,6 +1,6 @@
 import { $, createElement, createIcon, showToast } from "./ui.js";
 import * as images from "./image-store.js";
-import { refreshBackground, setUserPhotoSource } from "./background.js";
+import { refreshBackground } from "./background.js";
 
 let thumbUrls = [];
 
@@ -88,8 +88,6 @@ export async function initPhotoSettings() {
     return;
   }
 
-  setUserPhotoSource({ listIds: images.listPhotoIds, load: images.getPhotoBlob });
-
   const input = $("photo-input");
   input.addEventListener("change", () => {
     const files = [...input.files];
@@ -103,5 +101,4 @@ export async function initPhotoSettings() {
   } catch (error) {
     console.error("Failed to list photos:", error);
   }
-  await refreshBackground();
 }
