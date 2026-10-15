@@ -1,0 +1,72 @@
+:root {
+  --darken: 0.25;
+  --photo-fallback: linear-gradient(165deg, #22344a 0%, #4f6d8a 38%, #b48e6c 72%, #4a3428 100%);
+}
+
+/* ---- Background photo ---- */
+
+#backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--photo-fallback);
+}
+
+.backdrop-image {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.backdrop-image.is-visible {
+  opacity: 1;
+}
+
+.backdrop-image.is-instant {
+  transition: none;
+}
+
+/* Darkens the photo so white text stays readable; strength comes from the Darken setting. */
+#backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgb(0 0 0 / calc(var(--darken) * 0.6)) 0%,
+    rgb(0 0 0 / var(--darken)) 100%);
+}
+
+/* ---- Start page ---- */
+
+#start {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 72px 16px 96px;
+  color: #ffffff;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+}
+
+.start-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(640px, 100%);
+}
+
+#photo-credit {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.7;
+}

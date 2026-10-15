@@ -73,11 +73,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(900px 520px at 0% -10%, var(--bg-glow-1), transparent 60%),
-    radial-gradient(800px 520px at 100% 0%, var(--bg-glow-2), transparent 60%);
-  background-attachment: fixed;
+  background: #1b2433;
   color: var(--text);
   font-family: var(--font);
   font-size: 14px;

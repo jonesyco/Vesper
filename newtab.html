@@ -46,10 +46,18 @@
       --hue-s, --avatar-bg-l, --avatar-fg-l, --stripe-l, --folder-l
   -->
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/start.css">
   <link rel="stylesheet" href="css/sheet.css">
   <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
+  <div id="backdrop" aria-hidden="true"></div>
+
+  <main id="start">
+    <div class="start-center"></div>
+    <p id="photo-credit"></p>
+  </main>
+
   <header id="app-header">
     <div class="header-inner">
       <div class="brand">
@@ -86,7 +94,7 @@
     </div>
   </header>
 
-  <main class="page">
+  <div class="page">
     <section id="bookmark-list" aria-label="Bookmarks"></section>
 
     <details id="settings-panel">
@@ -120,7 +128,7 @@
         </div>
       </div>
     </details>
-  </main>
+  </div>
 
   <dialog id="edit-dialog" class="modal" aria-labelledby="edit-dialog-title">
     <form id="edit-form" novalidate>

@@ -2,6 +2,11 @@ import { api } from "./api.js";
 import { $, hydrateIcons } from "./ui.js";
 import { CSS_STORAGE_KEY, applyCustomCss, initCssEditor, handleCssStorageChange } from "./custom-css.js";
 import { MANAGER_STORAGE_KEYS, initManager } from "./manager.js";
+import { paintCachedBackground, initBackground } from "./background.js";
+import { loadSettings } from "./settings-store.js";
+
+// Runs before anything awaits, so the last photo is on the first frame.
+paintCachedBackground();
 
 // Temporary: the old <details> settings panel. Replaced in the settings-panel task.
 function initLegacySettingsToggle() {
@@ -24,6 +29,8 @@ function initLegacySettingsToggle() {
 
 async function init() {
   hydrateIcons(document);
+  await loadSettings();
+  initBackground();
 
   // Apply the theme and view first so bookmarks render already styled.
   let stored = {};
