@@ -14,7 +14,7 @@ const NOTE_SAVE_DELAY_MS = 500;
 const NOTE_SAVED_CLEAR_DELAY_MS = 2000;
 const REFRESH_DELAY_MS = 150;
 const DRAG_EXPAND_DELAY_MS = 700;
-const BOOKMARK_DRAG_TYPE = "application/x-bookmark-homepage-id";
+const BOOKMARK_DRAG_TYPE = "application/x-vesper-bookmark-id";
 
 const VIEW_GRID = "grid";
 const VIEW_LIST = "list";
