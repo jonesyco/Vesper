@@ -57,6 +57,12 @@
     <div class="start-center">
       <time id="clock"></time>
       <p id="date-line"><span id="date-text"></span><span id="date-sep" aria-hidden="true"> · </span><span id="greeting"></span></p>
+      <form id="start-search-form" class="start-search" role="search" autocomplete="off">
+        <span class="start-search-icon icon-slot" data-icon="search"></span>
+        <input id="start-search" type="search" placeholder="Search the web or your bookmarks" spellcheck="false"
+          role="combobox" aria-label="Search" aria-autocomplete="list" aria-controls="search-suggestions" aria-expanded="false">
+        <ul id="search-suggestions" role="listbox" aria-label="Matching bookmarks" hidden></ul>
+      </form>
     </div>
     <p id="photo-credit"></p>
   </main>

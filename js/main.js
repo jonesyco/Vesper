@@ -5,6 +5,8 @@ import { MANAGER_STORAGE_KEYS, initManager } from "./manager.js";
 import { paintCachedBackground, initBackground } from "./background.js";
 import { loadSettings } from "./settings-store.js";
 import { initClock } from "./clock.js";
+import { initStartSearch } from "./start-search.js";
+import { initShortcuts } from "./shortcuts.js";
 
 // Runs before anything awaits, so the last photo is on the first frame.
 paintCachedBackground();
@@ -33,6 +35,8 @@ async function init() {
   await loadSettings();
   initBackground();
   initClock();
+  initStartSearch();
+  initShortcuts();
 
   // Apply the theme and view first so bookmarks render already styled.
   let stored = {};

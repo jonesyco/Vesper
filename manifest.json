@@ -5,7 +5,8 @@
   "description": "Replaces the New Tab page with your bookmarks: grid and folder views, drag-and-drop organizing, personal notes, and a custom CSS theme.",
   "permissions": [
     "bookmarks",
-    "storage"
+    "storage",
+    "search"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

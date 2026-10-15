@@ -84,19 +84,6 @@ function initSearch() {
       renderBookmarks();
     }
   });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) {
-      return;
-    }
-    const target = event.target;
-    const isTyping = target instanceof Element && target.closest("input, textarea, select, [contenteditable]");
-    if (isTyping || document.querySelector("dialog[open]")) {
-      return;
-    }
-    event.preventDefault();
-    input.focus();
-  });
 }
 
 function initToolbar() {
@@ -245,6 +232,16 @@ function filterTree(nodes, query) {
     }
   }
   return results;
+}
+
+// Best bookmark matches for the start-page search box.
+export function searchBookmarks(query, limit) {
+  const needle = query.trim().toLowerCase();
+  if (!needle) {
+    return [];
+  }
+  const matches = flattenBookmarks(state.topLevel, [], []).filter((bookmark) => bookmarkMatches(bookmark, needle, state.notes));
+  return sortBookmarks(matches).slice(0, limit);
 }
 
 function defaultFolderId() {
