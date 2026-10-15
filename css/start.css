@@ -1,0 +1,319 @@
+:root {
+  --darken: 0.25;
+  --blur: 0px;
+  --blur-scale: 1;
+  --photo-fallback: linear-gradient(165deg, #22344a 0%, #4f6d8a 38%, #b48e6c 72%, #4a3428 100%);
+}
+
+/* ---- Background photo ---- */
+
+#backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--photo-fallback);
+}
+
+.backdrop-image {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  filter: blur(var(--blur));
+  transform: scale(var(--blur-scale));
+  transition: opacity 0.6s ease, filter 0.3s ease, transform 0.3s ease;
+}
+
+.backdrop-image.is-visible {
+  opacity: 1;
+}
+
+.backdrop-image.is-instant {
+  transition: none;
+}
+
+/* Darkens the photo so white text stays readable; strength comes from the Darken setting. */
+#backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    rgb(0 0 0 / calc(var(--darken) * 0.6)) 0%,
+    rgb(0 0 0 / var(--darken)) 100%);
+}
+
+/* ---- Start page ---- */
+
+#start {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 72px 16px 96px;
+  color: #ffffff;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+}
+
+.start-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(760px, 100%);
+}
+
+#photo-credit {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ---- Clock and greeting ---- */
+
+#clock {
+  font-size: clamp(64px, 11vw, 132px);
+  font-weight: 200;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+#date-line {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+/* ---- Search ---- */
+
+.start-search {
+  position: relative;
+  width: min(560px, 100%);
+  margin-top: 10px;
+  text-shadow: none;
+}
+
+.start-search-icon {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 16px;
+  /* Above the input, whose backdrop-filter gives it its own stacking layer. */
+  z-index: 1;
+  color: rgb(255 255 255 / 0.85);
+  pointer-events: none;
+}
+
+#start-search {
+  width: 100%;
+  height: 48px;
+  padding: 0 20px 0 46px;
+  background: rgb(255 255 255 / 0.18);
+  color: #ffffff;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  backdrop-filter: blur(14px) saturate(1.3);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Esc clears the box; the native clear button clashes with the glass style. */
+#start-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+#start-search::placeholder {
+  color: rgb(255 255 255 / 0.75);
+}
+
+#start-search:focus {
+  outline: none;
+  background: rgb(255 255 255 / 0.26);
+  border-color: rgb(255 255 255 / 0.7);
+}
+
+#search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 5;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--glass-bg, rgb(246 247 252 / 0.85));
+  color: var(--text);
+  border: 1px solid var(--glass-border, rgb(255 255 255 / 0.6));
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+
+.suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.suggestion[aria-selected="true"],
+.suggestion:hover {
+  background: var(--accent-soft);
+}
+
+.suggestion .bookmark-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.suggestion-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.suggestion-title {
+  overflow: hidden;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.suggestion-url {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---- Top sites ---- */
+
+/* Balanced rows: --columns is set from the site count (at most 8 per row). */
+#top-sites {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 8), 76px);
+  justify-content: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  #top-sites {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.top-site {
+  position: relative;
+  width: 76px;
+}
+
+.top-site-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.top-site-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: rgb(255 255 255 / 0.2);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 16px;
+  backdrop-filter: blur(12px) saturate(1.3);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.top-site-link:hover .top-site-icon,
+.top-site-link:focus-visible .top-site-icon {
+  background: rgb(255 255 255 / 0.32);
+  transform: translateY(-2px);
+}
+
+.top-site-icon img {
+  width: 28px;
+  height: 28px;
+}
+
+.top-site-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: hsl(var(--hue) var(--hue-s) var(--avatar-bg-l));
+  color: hsl(var(--hue) var(--hue-s) var(--avatar-fg-l));
+  border-radius: 10px;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.top-site-title {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.top-site-hide {
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgb(0 0 0 / 0.55);
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.top-site:hover .top-site-hide,
+.top-site:focus-within .top-site-hide {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .top-site-hide {
+    opacity: 1;
+  }
+}
+
+#start {
+  transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+body[data-sheet="open"] #start {
+  filter: blur(6px);
+  opacity: 0.55;
+  transform: scale(0.98);
+}
