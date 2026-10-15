@@ -1,5 +1,5 @@
 import { $ } from "./ui.js";
-import { wheelAction } from "./lib/wheel.js";
+import { wheelAction, pathScrollTop } from "./lib/wheel.js";
 import { getSettings } from "./settings-store.js";
 
 const DRAG_THRESHOLD_PX = 60;
@@ -86,7 +86,9 @@ function initHandle() {
 function initWheel() {
   window.addEventListener("wheel", (event) => {
     const now = performance.now();
-    const action = wheelAction({ open, deltaY: event.deltaY, scrollTop: $("sheet-body").scrollTop, now, lastWheelAt });
+    const body = $("sheet-body");
+    const scrollTop = Math.max(body.scrollTop, event.target instanceof Element ? pathScrollTop(event.target, body) : 0);
+    const action = wheelAction({ open, deltaY: event.deltaY, scrollTop, now, lastWheelAt });
     lastWheelAt = now;
     if (!action || document.querySelector("dialog[open]")) {
       return;
