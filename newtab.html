@@ -145,7 +145,15 @@
         <label class="setting-row"><span>Darken <output id="darken-value"></output></span>
           <input type="range" min="0" max="60" step="5" data-setting="darken">
         </label>
-        <div id="photos-block"></div>
+        <div id="photos-block">
+          <div class="setting-row"><span>Your photos</span>
+            <label class="btn btn-small" for="photo-input" id="photo-add"><span class="icon-slot" data-icon="plus"></span>Add photos</label>
+            <input id="photo-input" type="file" accept="image/*" multiple hidden>
+          </div>
+          <p id="photos-unavailable" class="setting-hint" hidden>Not available in this window.</p>
+          <p class="setting-hint">You can also drop images onto this panel.</p>
+          <ul id="photo-grid" class="photo-grid"></ul>
+        </div>
       </section>
 
       <section class="settings-section" aria-labelledby="settings-clock-title">

@@ -10,6 +10,7 @@ import { initShortcuts } from "./shortcuts.js";
 import { initTopSites } from "./top-sites-row.js";
 import { initSheet } from "./sheet.js";
 import { initSettingsPanel } from "./settings-panel.js";
+import { initPhotoSettings } from "./settings-photos.js";
 
 // Runs before anything awaits, so the last photo is on the first frame.
 paintCachedBackground();
@@ -37,6 +38,7 @@ async function init() {
   initShortcuts();
   initCssEditor(initialCss);
   initSettingsPanel();
+  initPhotoSettings();
 
   await initManager(stored);
 }
