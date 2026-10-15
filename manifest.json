@@ -6,7 +6,9 @@
   "permissions": [
     "bookmarks",
     "storage",
-    "search"
+    "search",
+    "topSites",
+    "favicon"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

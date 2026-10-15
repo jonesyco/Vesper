@@ -7,6 +7,7 @@ import { loadSettings } from "./settings-store.js";
 import { initClock } from "./clock.js";
 import { initStartSearch } from "./start-search.js";
 import { initShortcuts } from "./shortcuts.js";
+import { initTopSites } from "./top-sites-row.js";
 
 // Runs before anything awaits, so the last photo is on the first frame.
 paintCachedBackground();
@@ -36,6 +37,7 @@ async function init() {
   initBackground();
   initClock();
   initStartSearch();
+  initTopSites();
   initShortcuts();
 
   // Apply the theme and view first so bookmarks render already styled.
