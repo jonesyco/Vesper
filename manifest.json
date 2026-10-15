@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Homepage",
-  "version": "1.1.0",
-  "description": "Replaces the New Tab page with your bookmarks: grid and folder views, drag-and-drop organizing, personal notes, and a custom CSS theme.",
+  "version": "2.0.0",
+  "description": "A calm start page with a photo, clock, search and your most visited sites, plus your bookmarks one swipe away: grid and folder views, notes and custom CSS.",
   "permissions": [
     "bookmarks",
     "storage",
@@ -18,7 +18,9 @@
       "id": "bookmark-homepage@extension",
       "strict_min_version": "128.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   }
