@@ -1,8 +1,8 @@
 import { $, isTypingTarget } from "./ui.js";
+import { isSheetOpen, setSheetOpen } from "./sheet.js";
 
 function focusSearchField() {
-  const sheetOpen = document.body.dataset.sheet === "open";
-  const field = sheetOpen ? $("search-input") : $("start-search");
+  const field = isSheetOpen() ? $("search-input") : $("start-search");
   if (field.closest("[hidden]")) {
     return;
   }
@@ -14,12 +14,20 @@ export function initShortcuts() {
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
-    if (document.querySelector("dialog[open]") || isTypingTarget(event.target)) {
+    if (document.querySelector("dialog[open]")) {
       return;
     }
-    if (event.key === "/") {
+    const typing = isTypingTarget(event.target);
+
+    if (event.key === "/" && !typing) {
       event.preventDefault();
       focusSearchField();
+    } else if (event.key === "ArrowDown" && !typing && !isSheetOpen()) {
+      event.preventDefault();
+      setSheetOpen(true);
+    } else if (event.key === "Escape" && isSheetOpen()) {
+      event.preventDefault();
+      setSheetOpen(false);
     }
   });
 }

@@ -303,3 +303,13 @@
     opacity: 1;
   }
 }
+
+#start {
+  transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+}
+
+body[data-sheet="open"] #start {
+  filter: blur(6px);
+  opacity: 0.55;
+  transform: scale(0.98);
+}

@@ -50,7 +50,7 @@
   <link rel="stylesheet" href="css/sheet.css">
   <link rel="stylesheet" href="css/settings.css">
 </head>
-<body>
+<body data-sheet="closed">
   <div id="backdrop" aria-hidden="true"></div>
 
   <main id="start">
@@ -68,77 +68,85 @@
     <p id="photo-credit"></p>
   </main>
 
-  <header id="app-header">
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-mark icon-slot" data-icon="bookmark"></span>
-        <h1>Bookmarks</h1>
-        <span id="bookmark-count"></span>
-      </div>
+  <section id="sheet" aria-label="Bookmarks">
+    <button type="button" id="sheet-handle" aria-expanded="false" aria-controls="sheet-body">
+      <span class="sheet-grip" aria-hidden="true"></span>
+      <span class="sheet-handle-label">Bookmarks</span>
+    </button>
+    <div id="sheet-body" inert>
+      <header id="app-header">
+        <div class="header-inner">
+          <div class="brand">
+            <span class="brand-mark icon-slot" data-icon="bookmark"></span>
+            <h1>Bookmarks</h1>
+            <span id="bookmark-count"></span>
+          </div>
 
-      <label class="search" for="search-input">
-        <span class="search-icon icon-slot" data-icon="search"></span>
-        <input id="search-input" type="search" placeholder="Search bookmarks and notes" autocomplete="off" spellcheck="false">
-        <kbd class="search-hint">/</kbd>
-      </label>
+          <label class="search" for="search-input">
+            <span class="search-icon icon-slot" data-icon="search"></span>
+            <input id="search-input" type="search" placeholder="Search bookmarks and notes" autocomplete="off" spellcheck="false">
+            <kbd class="search-hint">/</kbd>
+          </label>
 
-      <div class="header-actions">
-        <div id="view-toggle" role="group" aria-label="View">
-          <button type="button" class="view-toggle-btn" data-view="grid" aria-pressed="true" title="Blocks view">
-            <span class="icon-slot" data-icon="grid"></span><span class="btn-label">Blocks</span>
-          </button>
-          <button type="button" class="view-toggle-btn" data-view="list" aria-pressed="false" title="List view">
-            <span class="icon-slot" data-icon="list"></span><span class="btn-label">List</span>
-          </button>
+          <div class="header-actions">
+            <div id="view-toggle" role="group" aria-label="View">
+              <button type="button" class="view-toggle-btn" data-view="grid" aria-pressed="true" title="Blocks view">
+                <span class="icon-slot" data-icon="grid"></span><span class="btn-label">Blocks</span>
+              </button>
+              <button type="button" class="view-toggle-btn" data-view="list" aria-pressed="false" title="List view">
+                <span class="icon-slot" data-icon="list"></span><span class="btn-label">List</span>
+              </button>
+            </div>
+            <button type="button" id="add-folder-btn" class="btn" title="New folder">
+              <span class="icon-slot" data-icon="folderPlus"></span><span class="btn-label">New folder</span>
+            </button>
+            <button type="button" id="add-bookmark-btn" class="btn btn-primary" title="Add bookmark">
+              <span class="icon-slot" data-icon="plus"></span><span class="btn-label">Add bookmark</span>
+            </button>
+            <button type="button" id="settings-btn" class="btn btn-icon" aria-label="Settings" title="Settings" aria-controls="settings-panel" aria-expanded="false">
+              <span class="icon-slot" data-icon="sliders"></span>
+            </button>
+          </div>
         </div>
-        <button type="button" id="add-folder-btn" class="btn" title="New folder">
-          <span class="icon-slot" data-icon="folderPlus"></span><span class="btn-label">New folder</span>
-        </button>
-        <button type="button" id="add-bookmark-btn" class="btn btn-primary" title="Add bookmark">
-          <span class="icon-slot" data-icon="plus"></span><span class="btn-label">Add bookmark</span>
-        </button>
-        <button type="button" id="settings-btn" class="btn btn-icon" aria-label="Settings" title="Settings" aria-controls="settings-panel" aria-expanded="false">
-          <span class="icon-slot" data-icon="sliders"></span>
-        </button>
+      </header>
+
+      <div class="page">
+        <section id="bookmark-list" aria-label="Bookmarks"></section>
+
+        <details id="settings-panel">
+          <summary><span class="folder-chevron icon-slot" data-icon="chevron"></span>Settings</summary>
+          <div class="settings-body">
+            <label for="css-editor">Custom CSS</label>
+            <p class="selector-reference">
+              Available selectors:
+              <code>#bookmark-list</code>
+              <code>[data-view="grid"]</code>
+              <code>[data-view="list"]</code>
+              <code>.bookmark-item</code>
+              <code>.bookmark-avatar</code>
+              <code>.bookmark-title</code>
+              <code>.bookmark-url</code>
+              <code>.bookmark-folder</code>
+              <code>.bookmark-note</code>
+              <code>.bookmark-folder-group</code>
+              <code>.bookmark-folder-header</code>
+              <code>.bookmark-folder-children</code>
+              <code>#settings-panel</code>
+              <code>#css-editor</code>.
+              Override theme variables such as <code>--accent</code>, <code>--accent-2</code>, <code>--bg</code>, or <code>--radius</code> on <code>:root</code>.
+              Press Ctrl+S (Cmd+S on Mac) in the editor to save.
+            </p>
+            <textarea id="css-editor" spellcheck="false" placeholder=":root { --accent: #e11d48; --accent-2: #f97316; }&#10;.bookmark-item { border-radius: 4px; }"></textarea>
+            <div class="settings-actions">
+              <button type="button" id="save-style-btn" class="btn btn-primary">Save Style</button>
+              <button type="button" id="reset-style-btn" class="btn">Reset Style</button>
+              <span id="settings-status" role="status"></span>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
-  </header>
-
-  <div class="page">
-    <section id="bookmark-list" aria-label="Bookmarks"></section>
-
-    <details id="settings-panel">
-      <summary><span class="folder-chevron icon-slot" data-icon="chevron"></span>Settings</summary>
-      <div class="settings-body">
-        <label for="css-editor">Custom CSS</label>
-        <p class="selector-reference">
-          Available selectors:
-          <code>#bookmark-list</code>
-          <code>[data-view="grid"]</code>
-          <code>[data-view="list"]</code>
-          <code>.bookmark-item</code>
-          <code>.bookmark-avatar</code>
-          <code>.bookmark-title</code>
-          <code>.bookmark-url</code>
-          <code>.bookmark-folder</code>
-          <code>.bookmark-note</code>
-          <code>.bookmark-folder-group</code>
-          <code>.bookmark-folder-header</code>
-          <code>.bookmark-folder-children</code>
-          <code>#settings-panel</code>
-          <code>#css-editor</code>.
-          Override theme variables such as <code>--accent</code>, <code>--accent-2</code>, <code>--bg</code>, or <code>--radius</code> on <code>:root</code>.
-          Press Ctrl+S (Cmd+S on Mac) in the editor to save.
-        </p>
-        <textarea id="css-editor" spellcheck="false" placeholder=":root { --accent: #e11d48; --accent-2: #f97316; }&#10;.bookmark-item { border-radius: 4px; }"></textarea>
-        <div class="settings-actions">
-          <button type="button" id="save-style-btn" class="btn btn-primary">Save Style</button>
-          <button type="button" id="reset-style-btn" class="btn">Reset Style</button>
-          <span id="settings-status" role="status"></span>
-        </div>
-      </div>
-    </details>
-  </div>
+  </section>
 
   <dialog id="edit-dialog" class="modal" aria-labelledby="edit-dialog-title">
     <form id="edit-form" novalidate>
