@@ -1,19 +1,17 @@
-"use strict";
+import { api } from "./api.js";
+import {
+  $, createElement, createIcon, createIconSlot, createIconButton, hashHue, hostOf,
+  formatUrlForDisplay, avatarLetter, plural, errorMessage, showToast, confirmAction
+} from "./ui.js";
+import { normalizeUrl } from "./lib/url.js";
+import { bookmarkMatches } from "./lib/match.js";
 
-// Firefox exposes the promise-based `browser` namespace; Chrome uses `chrome`
-// (which also returns promises in Manifest V3).
-const api = globalThis.browser ?? globalThis.chrome;
-
-const CSS_STORAGE_KEY = "custom_theme_css";
 const VIEW_STORAGE_KEY = "view_mode";
 const COLLAPSED_STORAGE_KEY = "collapsed_folders";
 const LAST_FOLDER_STORAGE_KEY = "last_folder_id";
 const NOTE_KEY_PREFIX = "note_";
 const NOTE_SAVE_DELAY_MS = 500;
 const NOTE_SAVED_CLEAR_DELAY_MS = 2000;
-const CUSTOM_STYLE_ELEMENT_ID = "custom-theme-style";
-const STATUS_CLEAR_DELAY_MS = 2500;
-const TOAST_DURATION_MS = 3200;
 const REFRESH_DELAY_MS = 150;
 const DRAG_EXPAND_DELAY_MS = 700;
 const BOOKMARK_DRAG_TYPE = "application/x-bookmark-homepage-id";
@@ -24,23 +22,6 @@ const VIEW_MODES = [VIEW_GRID, VIEW_LIST];
 
 const TYPE_BOOKMARK = "bookmark";
 const TYPE_FOLDER = "folder";
-
-const SVG_NS = "http://www.w3.org/2000/svg";
-const FOLDER_PATH = "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z";
-const ICON_PATHS = {
-  bookmark: "M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z",
-  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4",
-  plus: "M12 5v14M5 12h14",
-  folder: FOLDER_PATH,
-  folderPlus: FOLDER_PATH + "M12 10.5v5M9.5 13h5",
-  pencil: "M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z",
-  trash: "M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5",
-  grip: "M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01",
-  chevron: "M9 6l6 6-6 6",
-  grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
-  list: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
-  sliders: "M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4"
-};
 
 const state = {
   view: VIEW_GRID,
@@ -54,271 +35,10 @@ const state = {
 
 // bookmarkId -> { timer, textarea, statusElement } for notes typed but not yet saved.
 const pendingNoteSaves = new Map();
-let settingsStatusTimer = null;
 let refreshTimer = null;
 let refreshAfterDrag = false;
 let dragState = null;    // { id, dropTarget, expandTimer } while dragging
 let dialogState = null;  // { mode, node } while the edit dialog is open
-
-// ---------------------------------------------------------------------------
-// Small helpers
-// ---------------------------------------------------------------------------
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-function createElement(tag, className, text) {
-  const element = document.createElement(tag);
-  if (className) {
-    element.className = className;
-  }
-  if (text !== undefined) {
-    element.textContent = text;
-  }
-  return element;
-}
-
-function createIcon(name) {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  svg.setAttribute("class", `icon icon-${name}`);
-  const path = document.createElementNS(SVG_NS, "path");
-  path.setAttribute("d", ICON_PATHS[name]);
-  svg.append(path);
-  return svg;
-}
-
-function createIconSlot(name, className) {
-  const slot = createElement("span", `icon-slot${className ? ` ${className}` : ""}`);
-  slot.append(createIcon(name));
-  return slot;
-}
-
-function hydrateIcons(root) {
-  for (const element of root.querySelectorAll("[data-icon]")) {
-    element.replaceChildren(createIcon(element.dataset.icon));
-  }
-}
-
-function createIconButton(iconName, label, onClick, extraClass) {
-  const button = createElement("button", `icon-btn${extraClass ? ` ${extraClass}` : ""}`);
-  button.type = "button";
-  button.title = label;
-  button.setAttribute("aria-label", label);
-  button.append(createIcon(iconName));
-  button.addEventListener("click", (event) => {
-    // Buttons live inside <summary> in list view; don't toggle the folder.
-    event.preventDefault();
-    event.stopPropagation();
-    onClick();
-  });
-  return button;
-}
-
-// Hand-picked hues that stay readable in light and dark mode (no washed-out yellows).
-const ACCENT_HUES = [210, 235, 260, 285, 315, 340, 5, 25, 150, 170, 190];
-
-function hashHue(text) {
-  let hash = 0;
-  for (const character of text) {
-    hash = (hash * 31 + character.codePointAt(0)) % 1000003;
-  }
-  return ACCENT_HUES[hash % ACCENT_HUES.length];
-}
-
-function hostOf(url) {
-  try {
-    return new URL(url).host || url;
-  } catch {
-    return url;
-  }
-}
-
-function formatUrlForDisplay(url) {
-  try {
-    const parsed = new URL(url);
-    const path = parsed.pathname === "/" ? "" : parsed.pathname;
-    return parsed.host ? parsed.host.replace(/^www\./, "") + path : url;
-  } catch {
-    return url;
-  }
-}
-
-function avatarLetter(title) {
-  const match = title.match(/[\p{L}\p{N}]/u);
-  return match ? match[0].toUpperCase() : "•";
-}
-
-function plural(count, word) {
-  return `${count} ${word}${count === 1 ? "" : "s"}`;
-}
-
-function errorMessage(error) {
-  return error && error.message ? error.message : String(error);
-}
-
-function normalizeUrl(input) {
-  const trimmed = input.trim();
-  if (!trimmed) {
-    throw new Error("Enter a URL.");
-  }
-  const hasScheme = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed) || /^mailto:/i.test(trimmed);
-  let parsed;
-  try {
-    parsed = new URL(hasScheme ? trimmed : `https://${trimmed}`);
-  } catch {
-    throw new Error("That doesn't look like a valid URL.");
-  }
-  if (!["http:", "https:", "ftp:", "mailto:"].includes(parsed.protocol)) {
-    throw new Error("Only http, https, ftp and mailto links can be added here.");
-  }
-  return parsed.href;
-}
-
-// ---------------------------------------------------------------------------
-// Toasts and confirmation
-// ---------------------------------------------------------------------------
-
-function showToast(message, kind = "info") {
-  const toast = createElement("div", `toast toast-${kind}`, message);
-  $("toast-region").append(toast);
-  setTimeout(() => {
-    toast.classList.add("toast-leaving");
-    setTimeout(() => toast.remove(), 300);
-  }, TOAST_DURATION_MS);
-}
-
-function confirmAction({ title, message, confirmLabel }) {
-  const dialog = $("confirm-dialog");
-  $("confirm-title").textContent = title;
-  $("confirm-message").textContent = message;
-  $("confirm-ok").textContent = confirmLabel;
-  dialog.returnValue = "";
-  dialog.showModal();
-  return new Promise((resolve) => {
-    dialog.addEventListener("close", () => resolve(dialog.returnValue === "confirm"), { once: true });
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Custom CSS
-// ---------------------------------------------------------------------------
-
-function applyCustomCss(cssText) {
-  let styleElement = $(CUSTOM_STYLE_ELEMENT_ID);
-
-  if (!cssText) {
-    if (styleElement) {
-      styleElement.remove();
-    }
-    return;
-  }
-
-  if (!styleElement) {
-    styleElement = document.createElement("style");
-    styleElement.id = CUSTOM_STYLE_ELEMENT_ID;
-  }
-
-  styleElement.textContent = cssText;
-  // appendChild moves an existing element, so the custom sheet always stays
-  // last in <head> and wins over the default styles.
-  document.head.appendChild(styleElement);
-}
-
-async function saveCustomCss(cssText) {
-  if (cssText.trim() === "") {
-    await api.storage.local.remove(CSS_STORAGE_KEY);
-    applyCustomCss("");
-  } else {
-    await api.storage.local.set({ [CSS_STORAGE_KEY]: cssText });
-    applyCustomCss(cssText);
-  }
-}
-
-function showSettingsStatus(message) {
-  const statusElement = $("settings-status");
-  statusElement.textContent = message;
-  clearTimeout(settingsStatusTimer);
-  settingsStatusTimer = setTimeout(() => {
-    statusElement.textContent = "";
-  }, STATUS_CLEAR_DELAY_MS);
-}
-
-function initSettingsPanel(initialCss) {
-  const panel = $("settings-panel");
-  const settingsButton = $("settings-btn");
-  const editor = $("css-editor");
-
-  editor.value = initialCss;
-
-  settingsButton.addEventListener("click", () => {
-    panel.open = !panel.open;
-    if (panel.open) {
-      panel.scrollIntoView({ behavior: "smooth", block: "start" });
-      editor.focus({ preventScroll: true });
-    }
-  });
-
-  panel.addEventListener("toggle", () => {
-    settingsButton.setAttribute("aria-expanded", String(panel.open));
-  });
-
-  const handleSave = async () => {
-    try {
-      await saveCustomCss(editor.value);
-      showSettingsStatus("Style saved.");
-    } catch (error) {
-      console.error("Failed to save custom CSS:", error);
-      showSettingsStatus("Could not save style.");
-    }
-  };
-
-  $("save-style-btn").addEventListener("click", handleSave);
-
-  $("reset-style-btn").addEventListener("click", async () => {
-    const confirmed = await confirmAction({
-      title: "Reset style?",
-      message: "Your custom CSS will be removed and the default style restored.",
-      confirmLabel: "Reset"
-    });
-    if (!confirmed) {
-      return;
-    }
-    editor.value = "";
-    try {
-      await saveCustomCss("");
-      showSettingsStatus("Default style restored.");
-    } catch (error) {
-      console.error("Failed to reset custom CSS:", error);
-      showSettingsStatus("Could not reset style.");
-    }
-  });
-
-  editor.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      handleSave();
-      return;
-    }
-
-    // Insert two spaces instead of moving focus, so indenting CSS feels natural.
-    // Shift+Tab still moves focus backwards for keyboard users.
-    if (event.key === "Tab" && !event.shiftKey) {
-      event.preventDefault();
-      const start = editor.selectionStart;
-      const end = editor.selectionEnd;
-      editor.value = editor.value.slice(0, start) + "  " + editor.value.slice(end);
-      editor.selectionStart = start + 2;
-      editor.selectionEnd = start + 2;
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
-// View mode, search and keyboard shortcuts
-// ---------------------------------------------------------------------------
 
 function updateViewToggleButtons() {
   for (const button of document.querySelectorAll(".view-toggle-btn")) {
@@ -506,21 +226,13 @@ function sortBookmarks(bookmarks) {
   });
 }
 
-function bookmarkMatches(bookmark, query) {
-  return (
-    bookmark.title.toLowerCase().includes(query) ||
-    bookmark.url.toLowerCase().includes(query) ||
-    (state.notes[bookmark.id] || "").toLowerCase().includes(query)
-  );
-}
-
 // Keeps bookmarks that match, plus the folders leading to them. A folder whose
 // own name matches is kept with all of its contents.
 function filterTree(nodes, query) {
   const results = [];
   for (const node of nodes) {
     if (node.type === TYPE_BOOKMARK) {
-      if (bookmarkMatches(node, query)) {
+      if (bookmarkMatches(node, query, state.notes)) {
         results.push(node);
       }
     } else if (node.title.toLowerCase().includes(query)) {
@@ -1165,7 +877,7 @@ function renderBookmarks() {
     visible = countTreeBookmarks(nodes);
     appendTreeNodes(fragment, nodes, 0);
   } else {
-    const bookmarks = flattenBookmarks(state.topLevel, [], []).filter((bookmark) => !query || bookmarkMatches(bookmark, query));
+    const bookmarks = flattenBookmarks(state.topLevel, [], []).filter((bookmark) => !query || bookmarkMatches(bookmark, query, state.notes));
     visible = bookmarks.length;
     for (const bookmark of sortBookmarks(bookmarks)) {
       fragment.append(createBookmarkCard(bookmark, { inTree: false }));
@@ -1192,28 +904,21 @@ function renderBookmarks() {
 // Cross-tab sync: keep other open New Tab pages up to date.
 // ---------------------------------------------------------------------------
 
-function handleStorageChange(changes, areaName) {
+function handleNoteStorageChange(changes, areaName) {
   if (areaName !== "local") {
     return;
   }
-
   for (const [key, change] of Object.entries(changes)) {
+    if (!key.startsWith(NOTE_KEY_PREFIX)) {
+      continue;
+    }
     const newValue = typeof change.newValue === "string" ? change.newValue : "";
-
-    if (key === CSS_STORAGE_KEY) {
-      applyCustomCss(newValue);
-      const editor = $("css-editor");
-      if (document.activeElement !== editor) {
-        editor.value = newValue;
-      }
-    } else if (key.startsWith(NOTE_KEY_PREFIX)) {
-      const bookmarkId = key.slice(NOTE_KEY_PREFIX.length);
-      const card = document.querySelector(`.bookmark-item[data-bookmark-id="${CSS.escape(bookmarkId)}"]`);
-      const textarea = card ? card.querySelector(".bookmark-note") : null;
-      if (textarea && document.activeElement !== textarea && textarea.value !== newValue) {
-        textarea.value = newValue;
-        state.notes[bookmarkId] = newValue;
-      }
+    const bookmarkId = key.slice(NOTE_KEY_PREFIX.length);
+    const card = document.querySelector(`.bookmark-item[data-bookmark-id="${CSS.escape(bookmarkId)}"]`);
+    const textarea = card ? card.querySelector(".bookmark-note") : null;
+    if (textarea && document.activeElement !== textarea && textarea.value !== newValue) {
+      textarea.value = newValue;
+      state.notes[bookmarkId] = newValue;
     }
   }
 }
@@ -1234,33 +939,20 @@ function initBookmarkListeners() {
 // Init
 // ---------------------------------------------------------------------------
 
-async function init() {
-  hydrateIcons(document);
+export const MANAGER_STORAGE_KEYS = [VIEW_STORAGE_KEY, COLLAPSED_STORAGE_KEY, LAST_FOLDER_STORAGE_KEY];
 
-  // Apply the theme and view first so bookmarks render already styled.
-  let stored = {};
-  try {
-    stored = await api.storage.local.get([CSS_STORAGE_KEY, VIEW_STORAGE_KEY, COLLAPSED_STORAGE_KEY, LAST_FOLDER_STORAGE_KEY]);
-  } catch (error) {
-    console.error("Failed to load settings:", error);
-  }
-
-  const initialCss = typeof stored[CSS_STORAGE_KEY] === "string" ? stored[CSS_STORAGE_KEY] : "";
-  applyCustomCss(initialCss);
+export async function initManager(stored) {
   state.view = VIEW_MODES.includes(stored[VIEW_STORAGE_KEY]) ? stored[VIEW_STORAGE_KEY] : VIEW_GRID;
   state.collapsed = new Set(Array.isArray(stored[COLLAPSED_STORAGE_KEY]) ? stored[COLLAPSED_STORAGE_KEY] : []);
   state.lastFolderId = typeof stored[LAST_FOLDER_STORAGE_KEY] === "string" ? stored[LAST_FOLDER_STORAGE_KEY] : null;
 
-  initSettingsPanel(initialCss);
   initViewToggle();
   initSearch();
   initToolbar();
   initDialogs();
   initDragContainer();
-  api.storage.onChanged.addListener(handleStorageChange);
+  api.storage.onChanged.addListener(handleNoteStorageChange);
   initBookmarkListeners();
 
   await refresh();
 }
-
-init();
