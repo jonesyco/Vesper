@@ -4,6 +4,7 @@ import { CSS_STORAGE_KEY, applyCustomCss, initCssEditor, handleCssStorageChange 
 import { MANAGER_STORAGE_KEYS, initManager } from "./manager.js";
 import { paintCachedBackground, initBackground } from "./background.js";
 import { loadSettings } from "./settings-store.js";
+import { initClock } from "./clock.js";
 
 // Runs before anything awaits, so the last photo is on the first frame.
 paintCachedBackground();
@@ -31,6 +32,7 @@ async function init() {
   hydrateIcons(document);
   await loadSettings();
   initBackground();
+  initClock();
 
   // Apply the theme and view first so bookmarks render already styled.
   let stored = {};
