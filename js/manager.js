@@ -7,6 +7,7 @@ import { normalizeUrl } from "./lib/url.js";
 import { bookmarkMatches } from "./lib/match.js";
 
 const VIEW_STORAGE_KEY = "view_mode";
+const COLUMNS_STORAGE_KEY = "list_columns";
 const COLLAPSED_STORAGE_KEY = "collapsed_folders";
 const LAST_FOLDER_STORAGE_KEY = "last_folder_id";
 const NOTE_KEY_PREFIX = "note_";
@@ -19,12 +20,15 @@ const BOOKMARK_DRAG_TYPE = "application/x-vesper-bookmark-id";
 const VIEW_GRID = "grid";
 const VIEW_LIST = "list";
 const VIEW_MODES = [VIEW_GRID, VIEW_LIST];
+const COLUMN_COUNTS = ["2", "3"];
+const DEFAULT_COLUMNS = "3";
 
 const TYPE_BOOKMARK = "bookmark";
 const TYPE_FOLDER = "folder";
 
 const state = {
   view: VIEW_GRID,
+  columns: DEFAULT_COLUMNS, // list view column count
   topLevel: [],          // normalized top-level folders (Bookmarks bar, Other bookmarks, ...)
   nodesById: new Map(),  // id -> normalized bookmark or folder
   notes: {},             // bookmarkId -> note text
@@ -41,15 +45,44 @@ let dragState = null;    // { id, dropTarget, expandTimer } while dragging
 let dialogState = null;  // { mode, node } while the edit dialog is open
 
 function updateViewToggleButtons() {
-  for (const button of document.querySelectorAll(".view-toggle-btn")) {
+  for (const button of document.querySelectorAll("#view-toggle .view-toggle-btn")) {
     button.setAttribute("aria-pressed", String(button.dataset.view === state.view));
+  }
+}
+
+function updateColumnToggleButtons() {
+  for (const button of document.querySelectorAll("#column-toggle .view-toggle-btn")) {
+    button.setAttribute("aria-pressed", String(button.dataset.columns === state.columns));
+  }
+}
+
+function initColumnToggle() {
+  updateColumnToggleButtons();
+  $("bookmark-list").dataset.columns = state.columns;
+
+  for (const button of document.querySelectorAll("#column-toggle .view-toggle-btn")) {
+    button.addEventListener("click", async () => {
+      const columns = button.dataset.columns;
+      if (columns === state.columns || !COLUMN_COUNTS.includes(columns)) {
+        return;
+      }
+      state.columns = columns;
+      updateColumnToggleButtons();
+      // Only the layout changes, so no re-render is needed.
+      $("bookmark-list").dataset.columns = columns;
+      try {
+        await api.storage.local.set({ [COLUMNS_STORAGE_KEY]: columns });
+      } catch (error) {
+        console.error("Failed to save column count:", error);
+      }
+    });
   }
 }
 
 function initViewToggle() {
   updateViewToggleButtons();
 
-  for (const button of document.querySelectorAll(".view-toggle-btn")) {
+  for (const button of document.querySelectorAll("#view-toggle .view-toggle-btn")) {
     button.addEventListener("click", async () => {
       const view = button.dataset.view;
       if (view === state.view || !VIEW_MODES.includes(view)) {
@@ -936,14 +969,16 @@ function initBookmarkListeners() {
 // Init
 // ---------------------------------------------------------------------------
 
-export const MANAGER_STORAGE_KEYS = [VIEW_STORAGE_KEY, COLLAPSED_STORAGE_KEY, LAST_FOLDER_STORAGE_KEY];
+export const MANAGER_STORAGE_KEYS = [VIEW_STORAGE_KEY, COLUMNS_STORAGE_KEY, COLLAPSED_STORAGE_KEY, LAST_FOLDER_STORAGE_KEY];
 
 export async function initManager(stored) {
   state.view = VIEW_MODES.includes(stored[VIEW_STORAGE_KEY]) ? stored[VIEW_STORAGE_KEY] : VIEW_GRID;
+  state.columns = COLUMN_COUNTS.includes(stored[COLUMNS_STORAGE_KEY]) ? stored[COLUMNS_STORAGE_KEY] : DEFAULT_COLUMNS;
   state.collapsed = new Set(Array.isArray(stored[COLLAPSED_STORAGE_KEY]) ? stored[COLLAPSED_STORAGE_KEY] : []);
   state.lastFolderId = typeof stored[LAST_FOLDER_STORAGE_KEY] === "string" ? stored[LAST_FOLDER_STORAGE_KEY] : null;
 
   initViewToggle();
+  initColumnToggle();
   initSearch();
   initToolbar();
   initDialogs();

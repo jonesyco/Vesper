@@ -14,6 +14,8 @@ const ICON_PATHS = {
   chevron: "M9 6l6 6-6 6",
   grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   list: "M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01",
+  columns2: "M4 4h16v16H4zM12 4v16",
+  columns3: "M4 4h16v16H4zM9.33 4v16M14.67 4v16",
   sliders: "M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4",
   x: "M6 6l12 12M18 6L6 18",
   skip: "M5 5l9 7-9 7zM18 5v14"

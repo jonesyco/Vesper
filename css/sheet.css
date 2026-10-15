@@ -14,9 +14,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 16px;
-  max-width: 1400px;
+  max-width: 2400px;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 14px 32px;
 }
 
 .brand {
@@ -113,7 +113,8 @@
   margin-left: auto;
 }
 
-#view-toggle {
+#view-toggle,
+#column-toggle {
   display: inline-flex;
   padding: 3px;
   gap: 2px;
@@ -149,18 +150,23 @@
   box-shadow: var(--shadow-sm);
 }
 
+/* The column switch only affects the list view. */
+body:not([data-view="list"]) #column-toggle {
+  display: none;
+}
+
 /* ---- Page ---- */
 
 .page {
-  max-width: 1400px;
+  max-width: 2400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 18px 32px 24px;
 }
 
 #bookmark-list[data-view="grid"] {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-  gap: var(--gap);
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px;
 }
 
 /* ---- Shared card pieces ---- */
@@ -267,11 +273,15 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Sits inside the right edge of the note box. */
 .bookmark-note-status {
-  grid-area: status;
-  min-height: 14px;
+  grid-area: note;
+  align-self: center;
+  justify-self: end;
+  padding-right: 9px;
   color: var(--text-muted);
   font-size: 11px;
+  pointer-events: none;
 }
 
 .bookmark-actions {
@@ -321,10 +331,9 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas:
     "avatar main actions"
-    "note note note"
-    "status status status";
-  gap: 10px 12px;
-  padding: 18px 16px 10px;
+    "note note note";
+  gap: 8px 10px;
+  padding: 14px 12px 10px;
   overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -350,24 +359,40 @@
 }
 
 #bookmark-list[data-view="grid"] .bookmark-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  font-size: 17px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 15px;
 }
 
-#bookmark-list[data-view="grid"] .bookmark-note-status {
-  margin-top: -6px;
+#bookmark-list[data-view="grid"] .bookmark-title {
+  -webkit-line-clamp: 1;
 }
 
-/* ---- List view: indented folder tree ---- */
+#bookmark-list[data-view="grid"] .bookmark-folder {
+  margin-top: 3px;
+}
+
+#bookmark-list[data-view="grid"] .bookmark-note {
+  min-height: 30px;
+  padding: 5px 9px;
+}
+
+/* ---- List view: indented folder tree, flowed into columns ---- */
 
 #bookmark-list[data-view="list"] {
-  padding: 10px;
+  column-count: 3;
+  column-gap: 28px;
+  column-rule: 1px solid var(--border);
+  padding: 10px 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+}
+
+#bookmark-list[data-view="list"][data-columns="2"] {
+  column-count: 2;
 }
 
 .bookmark-folder-group {
@@ -384,13 +409,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 4px 8px;
+  min-height: 32px;
+  padding: 2px 6px;
   list-style: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
   user-select: none;
   transition: background-color 0.15s ease;
+  /* Never leave a folder name alone at the bottom of a column. */
+  break-inside: avoid;
+  break-after: avoid;
 }
 
 .bookmark-folder-header::-webkit-details-marker {
@@ -457,8 +485,8 @@
 }
 
 .bookmark-folder-children {
-  margin-left: 31px;
-  padding: 2px 0 6px 10px;
+  margin-left: 27px;
+  padding: 0 0 4px 8px;
   border-left: 2px solid hsl(var(--hue) var(--hue-s) var(--folder-l) / 0.3);
 }
 
@@ -473,15 +501,15 @@
 
 #bookmark-list[data-view="list"] .bookmark-item {
   display: grid;
-  /* Fixed note/status/actions widths keep note boxes aligned at every indent level. */
-  grid-template-columns: 16px 30px minmax(0, 1fr) min(34vw, 380px) 48px 64px;
-  grid-template-areas: "handle avatar main note status actions";
+  grid-template-columns: 14px 22px minmax(0, 1fr) minmax(0, 40%) 56px;
+  grid-template-areas: "handle avatar main note actions";
   align-items: center;
-  gap: 10px;
-  padding: 5px 8px;
+  gap: 8px;
+  padding: 2px 6px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   transition: background-color 0.15s ease, border-color 0.15s ease;
+  break-inside: avoid;
 }
 
 #bookmark-list[data-view="list"] .bookmark-item:hover {
@@ -489,19 +517,39 @@
 }
 
 #bookmark-list[data-view="list"] .bookmark-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  font-size: 13px;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+/* Title and address share one line. */
+#bookmark-list[data-view="list"] .bookmark-main {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
 }
 
 #bookmark-list[data-view="list"] .bookmark-title {
-  -webkit-line-clamp: 1;
+  display: block;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#bookmark-list[data-view="list"] .bookmark-url {
+  flex: 1 1 0;
+  min-width: 40px;
 }
 
 #bookmark-list[data-view="list"] .bookmark-note {
-  min-height: 32px;
-  padding: 5px 10px;
+  min-height: 26px;
+  padding: 3px 9px;
+}
+
+#bookmark-list[data-view="list"] .icon-btn {
+  width: 26px;
+  height: 26px;
 }
 
 #bookmark-list[data-view="list"] .bookmark-item:hover .bookmark-note:not(:focus) {
@@ -558,6 +606,24 @@ body.is-dragging-bookmark .folder-actions {
   }
 }
 
+/* Columns need room: three from 1600px, two from 1100px, one below that. */
+@media (max-width: 1599px) {
+  #bookmark-list[data-view="list"] {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 1099px) {
+  #bookmark-list[data-view="list"],
+  #bookmark-list[data-view="list"][data-columns="2"] {
+    column-count: 1;
+  }
+
+  #column-toggle {
+    display: none;
+  }
+}
+
 @media (max-width: 860px) {
   .btn-label {
     display: none;
@@ -587,11 +653,10 @@ body.is-dragging-bookmark .folder-actions {
   }
 
   #bookmark-list[data-view="list"] .bookmark-item {
-    grid-template-columns: 16px 30px minmax(0, 1fr) auto;
+    grid-template-columns: 14px 22px minmax(0, 1fr) auto;
     grid-template-areas:
       "handle avatar main actions"
-      ". note note note"
-      ". status status status";
+      ". note note note";
     gap: 6px 10px;
     padding: 8px;
   }
@@ -604,7 +669,7 @@ body.is-dragging-bookmark .folder-actions {
 /* ---- Bottom sheet ---- */
 
 :root {
-  --sheet-top: 15vh;
+  --sheet-top: 64px;
   --sheet-peek: 56px;
 }
 

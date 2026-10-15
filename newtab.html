@@ -15,8 +15,10 @@
       #search-input               Search box
       #view-toggle                Blocks / List switch (.view-toggle-btn[aria-pressed])
       #add-bookmark-btn, #add-folder-btn   Toolbar buttons
+      #column-toggle              List view 2 / 3 column switch (.view-toggle-btn[data-columns])
       #bookmark-list              Main container; data-view="grid" or "list"
                                   (body carries the same data-view attribute)
+                                  and data-columns="2" or "3"
       .bookmark-item              Bookmark card / row (data-bookmark-id, --hue)
       .bookmark-avatar            Coloured letter tile
       .bookmark-main              Wrapper around title, URL and folder
@@ -104,6 +106,14 @@
               </button>
               <button type="button" class="view-toggle-btn" data-view="list" aria-pressed="false" title="List view">
                 <span class="icon-slot" data-icon="list"></span><span class="btn-label">List</span>
+              </button>
+            </div>
+            <div id="column-toggle" role="group" aria-label="List columns">
+              <button type="button" class="view-toggle-btn" data-columns="2" aria-pressed="false" title="Two columns" aria-label="Two columns">
+                <span class="icon-slot" data-icon="columns2"></span>
+              </button>
+              <button type="button" class="view-toggle-btn" data-columns="3" aria-pressed="true" title="Three columns" aria-label="Three columns">
+                <span class="icon-slot" data-icon="columns3"></span>
               </button>
             </div>
             <button type="button" id="add-folder-btn" class="btn" title="New folder">
